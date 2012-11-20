@@ -39,6 +39,7 @@ static void usage(int status)
     exit(status);
 }
 
+
 int main(int argc, char *argv[])
 {
     char *user = NULL;
@@ -59,8 +60,7 @@ int main(int argc, char *argv[])
             usage(EXIT_SUCCESS);
             break;
         case 'u':
-            user = (char *) calloc(strlen(optarg) + 1, sizeof(char));
-            sprintf(user, "%s", optarg);
+            user = argv[optind-1];
             break;
         case 'v':
             printf("%s\n", VERSION);
@@ -75,30 +75,28 @@ int main(int argc, char *argv[])
     requestor = getuid();
     if (requestor != AID_ROOT && requestor != AID_SYSTEM && requestor != AID_RADIO) {
         printf("only root, system, or radio user can use this [%d]\n", requestor);
-        if (user)
-            free(user);
         exit(EXIT_SUCCESS);
     }
 
     if (user) {
-        printf("user: %s\n", user);
-        run_as = getpwnam(user);
-        free(user);
+        // check if a UID was passed, if so use getpwuid
+        if (isdigit(user[0]))
+            run_as=getpwuid(atoi(user));
+        else
+            run_as = getpwnam(user);
     } else {
         run_as = getpwnam("root");
     }
 
     if (run_as) {
-        printf("UID for %s is %d\n", run_as->pw_name, run_as->pw_uid);
         if (seteuid(run_as->pw_uid)) {
             printf("failed to seteuid(%d)\n", run_as->pw_uid);
             exit(EXIT_FAILURE);
         }
         if (optind >= argc) {
             printf("Expected COMMAND after options\n");
-            exit(EXIT_FAILURE);
+            usage(EXIT_FAILURE);
         }
-        printf("executing %s as %s\n", argv[optind], run_as->pw_name);
         LOGD("executing %s as %s\n", argv[optind], run_as->pw_name);
         execvp(argv[optind], argv + optind);
     } else {
