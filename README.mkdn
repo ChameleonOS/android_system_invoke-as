@@ -1,10 +1,11 @@
 Usage: invoke-as [-h] | [-v] [-u USER] COMMAND
 
 Options:
-
-  -h                            display this help message and exit
-
-  -u USER                       run command as USER
-
-  -v                            display version number and exit
+========
+-h                            display this help message and exit
+----------------------------------------------------------------
+-u USER                       run command as USER
+-------------------------------------------------
+-v                            display version number and exit
+-------------------------------------------------------------
 
