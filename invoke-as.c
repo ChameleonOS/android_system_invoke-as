@@ -15,14 +15,7 @@
  */
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <sys/wait.h>
-#include <sys/select.h>
-#include <sys/time.h>
 #include <unistd.h>
-#include <limits.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -30,7 +23,6 @@
 #include <pwd.h>
 
 #include <private/android_filesystem_config.h>
-#include <cutils/properties.h>
 
 #include "invoke-as.h"
 
@@ -67,8 +59,8 @@ int main(int argc, char *argv[])
             usage(EXIT_SUCCESS);
             break;
         case 'u':
-            user = optarg;
-            printf("user: %s\n", user);
+            user = (char *) calloc(strlen(optarg) + 1, sizeof(char));
+            sprintf(user, "%s", optarg);
             break;
         case 'v':
             printf("%s\n", VERSION);
@@ -81,13 +73,37 @@ int main(int argc, char *argv[])
     }
 
     requestor = getuid();
-    if (requestor != AID_ROOT || requestor != AID_SYSTEM || requestor != AID_RADIO) {
-        printf("only root, system, or radio user can use this");
+    if (requestor != AID_ROOT && requestor != AID_SYSTEM && requestor != AID_RADIO) {
+        printf("only root, system, or radio user can use this [%d]\n", requestor);
+        if (user)
+            free(user);
         exit(EXIT_SUCCESS);
     }
 
-    run_as = getpwnam("user");
-    printf("you ran this as %s\n", run_as->pw_name);
+    if (user) {
+        printf("user: %s\n", user);
+        run_as = getpwnam(user);
+        free(user);
+    } else {
+        run_as = getpwnam("root");
+    }
+
+    if (run_as) {
+        printf("UID for %s is %d\n", run_as->pw_name, run_as->pw_uid);
+        if (seteuid(run_as->pw_uid)) {
+            printf("failed to seteuid(%d)\n", run_as->pw_uid);
+            exit(EXIT_FAILURE);
+        }
+        if (optind >= argc) {
+            printf("Expected COMMAND after options\n");
+            exit(EXIT_FAILURE);
+        }
+        printf("executing %s as %s\n", argv[optind], run_as->pw_name);
+        LOGD("executing %s as %s\n", argv[optind], run_as->pw_name);
+        execvp(argv[optind], argv + optind);
+    } else {
+        printf("user does not exist!\n");
+    }
 
     return EXIT_SUCCESS;
 }
