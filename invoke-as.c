@@ -93,6 +93,10 @@ int main(int argc, char *argv[])
             printf("failed to seteuid(%d)\n", run_as->pw_uid);
             exit(EXIT_FAILURE);
         }
+        if (setegid(run_as->pw_gid)) {
+            printf("failed to setegid(%d)\n", run_as->pw_gid);
+            exit(EXIT_FAILURE);
+        }
         if (optind >= argc) {
             printf("Expected COMMAND after options\n");
             usage(EXIT_FAILURE);
