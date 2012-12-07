@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
     requestor = getuid();
     if (requestor != AID_ROOT && requestor != AID_SYSTEM && requestor != AID_RADIO) {
         printf("only root, system, or radio user can use this [%d]\n", requestor);
+        LOGD("only root, system, or radio user can use this [%d]\n", requestor);
         exit(EXIT_SUCCESS);
     }
 
@@ -91,14 +92,17 @@ int main(int argc, char *argv[])
     if (run_as) {
         if (seteuid(run_as->pw_uid)) {
             printf("failed to seteuid(%d)\n", run_as->pw_uid);
+            LOGD("failed to seteuid(%d)\n", run_as->pw_uid);
             exit(EXIT_FAILURE);
         }
         if (setegid(run_as->pw_gid)) {
             printf("failed to setegid(%d)\n", run_as->pw_gid);
+            LOGD("failed to seteuid(%d)\n", run_as->pw_uid);
             exit(EXIT_FAILURE);
         }
         if (optind >= argc) {
             printf("Expected COMMAND after options\n");
+            LOGD("failed to seteuid(%d)\n", run_as->pw_uid);
             usage(EXIT_FAILURE);
         }
         LOGD("executing %s as %s\n", argv[optind], run_as->pw_name);
