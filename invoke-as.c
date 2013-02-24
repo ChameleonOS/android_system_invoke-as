@@ -105,7 +105,6 @@ int main(int argc, char *argv[])
             LOGD("failed to seteuid(%d)\n", run_as->pw_uid);
             usage(EXIT_FAILURE);
         }
-        LOGD("executing %s as %s\n", argv[optind], run_as->pw_name);
         execvp(argv[optind], argv + optind);
     } else {
         printf("user does not exist!\n");
